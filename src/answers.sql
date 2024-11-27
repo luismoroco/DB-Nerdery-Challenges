@@ -5,8 +5,8 @@ SELECT
     COUNT(s.id) AS count
 FROM
     countries AS c
-INNER JOIN states AS s
-    ON c.id = s.country_id
+        INNER JOIN states AS s
+            ON c.id = s.country_id
 GROUP BY
     c.id;
 
@@ -14,8 +14,9 @@ GROUP BY
 SELECT
     count(*)
 FROM
-    public.employees as e
-WHERE e.supervisor_id IS NULL;
+    public.employees AS e
+WHERE
+    e.supervisor_id IS NULL;
 
 -- 3
 SELECT
@@ -23,59 +24,89 @@ SELECT
     o.address,
     COUNT(*) AS empleyees_count
 FROM
-    employees e
-INNER JOIN
-    offices o on o.id = e.office_id
-INNER JOIN
-    countries c on c.id = o.country_id
+    employees AS e
+        INNER JOIN offices AS o
+            ON o.id = e.office_id
+        INNER JOIN countries AS c
+            ON c.id = o.country_id
 GROUP BY
     c.name, o.address
 ORDER BY
     empleyees_count DESC, c.name DESC
-    LIMIT 5;
+LIMIT 5;
 
 -- 4
 SELECT
     e.supervisor_id,
-    count(e.id) AS employees_count
+    count(e.id) AS count
 FROM
-    employees e
+    employees AS e
 WHERE
     e.supervisor_id IS NOT NULL
 GROUP BY
     e.supervisor_id
 ORDER BY
-    employees_count DESC
-    LIMIT 3;
+    count DESC
+LIMIT 3;
 
 -- 5
-DROP FUNCTION IF EXISTS officesGetCountByStateId(INT);
-CREATE OR REPLACE FUNCTION officesGetCountByStateId(_state_id INT)
+CREATE OR REPLACE FUNCTION getStateIdByName(_state_name TEXT)
     RETURNS INT
     LANGUAGE plpgsql
 AS $$
+DECLARE
+    _state_id INT;
 BEGIN
-RETURN (
     SELECT
-        COUNT(*)
+        s.id
+    INTO
+        _state_id
     FROM
-        offices o
+        states AS s
     WHERE
-        o.state_id = _state_id
-);
+        s.name = _state_name;
+
+    RETURN _state_id;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RAISE NOTICE 'State not found: %', _state_name;
+        RETURN NULL;
 END;
 $$;
 
-SELECT officesGetCountByStateId(8) AS list_of_office;
+CREATE OR REPLACE FUNCTION getCountOfficesByStateName(_state_name TEXT)
+    RETURNS INT
+    LANGUAGE plpgsql
+AS $$
+DECLARE
+    _state_id INT;
+BEGIN
+    _state_id := getStateIdByName(_state_name);
+    IF _state_id IS NULL THEN
+        RETURN 0;
+    END IF;
+
+    RETURN (
+        SELECT
+            COUNT(*)
+        FROM
+            offices AS o
+        WHERE
+            o.state_id = _state_id
+    );
+END;
+$$;
+
+SELECT getCountOfficesByStateName('Colorado') AS list_of_office;
 
 -- 6
 SELECT
     o.name,
     COUNT(e.id) AS employees_count
 FROM
-    offices o
-INNER JOIN
-    employees e ON o.id = e.office_id
+    offices AS o
+        INNER JOIN employees AS e
+            ON o.id = e.office_id
 GROUP BY
     o.name
 ORDER BY
@@ -86,11 +117,11 @@ DROP TABLE IF EXISTS office_employee_count;
 CREATE TEMPORARY TABLE office_employee_count AS
 SELECT
     o.address,
-    COUNT(e.id) as employees_count
+    COUNT(e.id) AS employees_count
 FROM
-    offices o
-INNER JOIN
-    employees e on o.id = e.office_id
+    offices AS o
+        INNER JOIN employees AS e
+            ON o.id = e.office_id
 GROUP BY
     o.address;
 
@@ -98,14 +129,14 @@ GROUP BY
     SELECT *
     FROM office_employee_count
     WHERE employees_count = (SELECT MAX(employees_count) FROM office_employee_count)
-        LIMIT 1
+    LIMIT 1
 )
 UNION
 (
     SELECT *
     FROM office_employee_count
     WHERE employees_count = (SELECT MIN(employees_count) FROM office_employee_count)
-        LIMIT 1
+    LIMIT 1
 );
 
 DROP TABLE IF EXISTS office_employee_count;
@@ -121,12 +152,12 @@ SELECT
     s.name AS state,
     sup.first_name AS boss_name
 FROM
-    employees e
-INNER JOIN
-    employees sup ON e.supervisor_id = sup.id
-INNER JOIN
-    offices o ON e.office_id = o.id
-INNER JOIN
-    states s ON s.id = o.state_id
-INNER JOIN
-    countries c ON c.id = o.country_id;
+    employees AS e
+        INNER JOIN employees AS sup
+            ON e.supervisor_id = sup.id
+        INNER JOIN offices AS o
+            ON e.office_id = o.id
+        INNER JOIN states AS s
+            ON s.id = o.state_id
+        INNER JOIN countries AS c
+            ON c.id = o.country_id;
