@@ -79,7 +79,7 @@ CREATE TEMPORARY TABLE account_movements AS
             WHEN type IN ('OUT', 'TRANSFER', 'OTHER')
                 THEN -1 * m.mount
             ELSE 0
-            END AS amount
+        END AS amount
     FROM movements AS m
     WHERE m.type IN ('IN', 'OUT', 'TRANSFER', 'OTHER')
 
@@ -92,7 +92,7 @@ CREATE TEMPORARY TABLE account_movements AS
             WHEN type = 'TRANSFER'
                 THEN m.mount
             ELSE 0
-            END AS amount
+        END AS amount
     FROM movements AS m
     WHERE m.type = 'TRANSFER';
 
@@ -167,3 +167,40 @@ FOR EACH ROW
 EXECUTE FUNCTION handle_new_movement();
 
 -- Exercise 6
+SELECT
+    u.*,
+    json_agg(mv) AS movements
+FROM users AS u
+    INNER JOIN accounts AS ac
+        ON ac.user_id = u.id
+    LEFT JOIN movements AS mv
+        ON mv.account_from = ac.id
+WHERE ac.id = '3b79e403-c788-495a-a8ca-86ad7643afaf'
+GROUP BY u.id;
+
+-- Exercise 7
+SELECT
+    u.name,
+    u.email
+FROM users AS u
+    JOIN accounts AS a
+        ON u.id = a.user_id
+WHERE a.mount = (
+    SELECT MAX(max_mount)
+    FROM (
+        SELECT MAX(a.mount) AS max_mount
+        FROM accounts AS a
+        GROUP BY a.user_id
+    ) AS subquery
+);
+
+-- Exercise 8
+SELECT
+    mv.*
+FROM users AS u
+    INNER JOIN accounts AS a
+        ON u.id = a.user_id
+    INNER JOIN movements AS mv
+        ON mv.account_from = a.id
+WHERE u.email = 'Kaden.Gusikowski@gmail.com'
+ORDER BY mv.type, mv.created_at;
