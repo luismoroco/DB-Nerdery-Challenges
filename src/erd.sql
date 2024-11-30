@@ -139,8 +139,10 @@ UPDATE
 
 CREATE TABLE "product_resource" (
   product_resource_id BIGSERIAL PRIMARY KEY NOT NULL,
+  product_id BIGINT NOT NULL,
   file_id BIGINT NOT NULL,
   number INT NOT NULL,
+  FOREIGN KEY (product_id) REFERENCES "product"(product_id),
   FOREIGN KEY (file_id) REFERENCES "file"(file_id)
 );
 
@@ -161,8 +163,10 @@ UPDATE
 
 CREATE TABLE "category_resource" (
   category_resource_id BIGSERIAL PRIMARY KEY NOT NULL,
+  category_id BIGINT NOT NULL,
   file_id BIGINT NOT NULL,
   number INT NOT NULL,
+  FOREIGN KEY (category_id) REFERENCES "category"(category_id),
   FOREIGN KEY (file_id) REFERENCES "file"(file_id)
 );
 
@@ -197,11 +201,11 @@ CREATE TABLE "payment_provider" (
 );
 
 -- Order
-CREATE TABLE "order_state" (
-  order_state_id BIGINT PRIMARY KEY NOT NULL,
+CREATE TABLE "order_state_type" (
+  order_state_type_id BIGINT PRIMARY KEY NOT NULL,
   name TEXT, label TEXT
 );
-INSERT INTO order_state
+INSERT INTO order_state_type
 VALUES
   (1, 'PENDING', 'Pending'),
   (2, 'PAID', 'Paid'),
@@ -210,13 +214,13 @@ VALUES
 CREATE TABLE "order" (
   order_id BIGSERIAL PRIMARY KEY NOT NULL,
   user_id BIGINT NOT NULL,
-  order_state_id BIGINT NOT NULL,
-  amount NUMERIC(12, 2),
+  order_state_type_id BIGINT NOT NULL,
+  amount NUMERIC(12, 2) NOT NULL,
   created_at TIMESTAMP(3) WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
   updated_at TIMESTAMP(3) WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
   paid_at TIMESTAMP(3) WITH TIME ZONE,
   FOREIGN KEY (user_id) REFERENCES "user"(user_id),
-  FOREIGN KEY (order_state_id) REFERENCES "order_state"(order_state_id)
+  FOREIGN KEY (order_state_type_id) REFERENCES "order_state_type"(order_state_type_id)
 );
 CREATE TRIGGER update_order_updated_at BEFORE
 UPDATE
