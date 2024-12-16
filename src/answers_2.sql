@@ -36,32 +36,31 @@ $$;
 
 -- Exercise 1
 SELECT
-    a.type,
-    SUM(A.mount)
+    a.type AS type,
+    SUM(a.mount) AS mount
 FROM accounts AS a
 GROUP BY a.type;
 
 -- Exercise 2
-CREATE TEMPORARY TABLE user_accounts_count AS
+WITH user_accounts_count AS (
     SELECT
-        u.id,
+        u.id AS id,
         COUNT(*) AS accounts_count
     FROM users AS u
         LEFT JOIN accounts AS a
             ON u.id = a.user_id
     WHERE a.type = 'CURRENT_ACCOUNT'
     GROUP BY u.id
-    HAVING COUNT(*) >= 2;
+    HAVING COUNT(*) >= 2
+)
 
 SELECT COUNT(*)
 FROM user_accounts_count;
 
-DROP TABLE IF EXISTS user_accounts_count;
-
 -- Exercise 3
 SELECT
-    a.id,
-    a.type,
+    a.id AS id,
+    a.type AS type,
     SUM(a.mount) as total_amount
 FROM accounts AS a
 GROUP BY a.id, a.type
@@ -69,7 +68,7 @@ ORDER BY total_amount DESC
 LIMIT 5;
 
 -- Exercise 4
-CREATE TEMPORARY TABLE account_movements AS
+WITH account_movements AS (
     SELECT
         m.account_from AS account,
         m.type,
@@ -94,23 +93,21 @@ CREATE TEMPORARY TABLE account_movements AS
             ELSE 0
         END AS amount
     FROM movements AS m
-    WHERE m.type = 'TRANSFER';
-
-CREATE TEMPORARY TABLE account_aggregated AS
+    WHERE m.type = 'TRANSFER'
+),
+account_aggregated AS (
     SELECT
         am.account AS account_id,
         SUM(am.amount) AS total_movements
     FROM account_movements AS am
-    GROUP BY am.account;
+    GROUP BY am.account
+)
 
 UPDATE accounts AS a
 SET
     mount = a.mount + aa.total_movements
 FROM account_aggregated AS aa
 WHERE a.id = aa.account_id;
-
-DROP TABLE IF EXISTS account_movements;
-DROP TABLE IF EXISTS account_aggregated;
 
 SELECT
     u.id,

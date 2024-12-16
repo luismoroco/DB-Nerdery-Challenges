@@ -39,8 +39,8 @@ WHERE e.supervisor_id IS NULL;
 
 -- 3
 SELECT
-    c.name,
-    o.address,
+    c.name AS name,
+    o.address AS address,
     COUNT(*) AS empleyees_count
 FROM employees AS e
     INNER JOIN offices AS o
@@ -53,7 +53,7 @@ LIMIT 5;
 
 -- 4
 SELECT
-    e.supervisor_id,
+    e.supervisor_id AS supervisor_id,
     count(e.id) AS count
 FROM employees AS e
 WHERE e.supervisor_id IS NOT NULL
@@ -83,7 +83,7 @@ SELECT get_offices_count_by_state_name('Colorado') AS list_of_office;
 
 -- 6
 SELECT
-    o.name,
+    o.name AS name,
     COUNT(e.id) AS employees_count
 FROM offices AS o
     INNER JOIN employees AS e
@@ -92,15 +92,15 @@ GROUP BY o.name
 ORDER BY employees_count DESC;
 
 -- 7
-DROP TABLE IF EXISTS office_employee_count;
-CREATE TEMPORARY TABLE office_employee_count AS
+WITH office_employee_count AS (
     SELECT
         o.address,
         COUNT(e.id) AS employees_count
     FROM offices AS o
         INNER JOIN employees AS e
             ON o.id = e.office_id
-    GROUP BY o.address;
+    GROUP BY o.address
+)
 
 (
     SELECT *
@@ -116,14 +116,12 @@ UNION
     LIMIT 1
 );
 
-DROP TABLE IF EXISTS office_employee_count;
-
 -- 8
 SELECT
-    e.uuid,
-    e.first_name || ' ' || e.last_name AS full_name,
-    e.email,
-    e.job_title,
+    e.uuid as uuid,
+    CONCAT(e.first_name, ' ', e.last_name) AS full_name,
+    e.email AS email,
+    e.job_title AS job_title,
     o.name AS company,
     c.name AS country,
     s.name AS state,
