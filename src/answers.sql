@@ -34,7 +34,7 @@ GROUP BY c.id;
 
 -- 2
 SELECT COUNT(*)
-FROM public.employees AS e
+FROM employees AS e
 WHERE e.supervisor_id IS NULL;
 
 -- 3
