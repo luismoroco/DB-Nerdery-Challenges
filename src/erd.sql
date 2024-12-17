@@ -74,12 +74,11 @@ VALUES
 CREATE TABLE "notification_provider" (
   notification_provider_id BIGINT PRIMARY KEY NOT NULL,
   name TEXT NOT NULL,
-  label TEXT NOT NULL,
-  enabled BOOLEAN DEFAULT FALSE
+  label TEXT NOT NULL
 );
 INSERT INTO notification_provider
 VALUES
-  (1, 'G-MAIL', 'G-Mail', false);
+  (1, 'G-MAIL', 'G-Mail');
 
 CREATE TABLE "notification" (
   notification_id BIGSERIAL PRIMARY KEY NOT NULL,
@@ -127,7 +126,8 @@ CREATE TABLE "currency" (
 );
 INSERT INTO currency
 VALUES
-  (1, 'PEN', 'Peruvian Soles');
+  (1, 'PEN', 'Peruvian soles'),
+  (2, 'USD', 'American dollar');
 
 -- Products
 CREATE TABLE "product" (
@@ -200,11 +200,13 @@ CREATE TABLE "order" (
   order_id BIGSERIAL PRIMARY KEY NOT NULL,
   user_id BIGINT NOT NULL,
   order_state_type_id BIGINT NOT NULL,
+  currency_id BIGINT NOT NULL,
   amount NUMERIC(12, 2) NOT NULL,
   created_at TIMESTAMP(3) WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
   updated_at TIMESTAMP(3) WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
   FOREIGN KEY (user_id) REFERENCES "user"(user_id) ON DELETE CASCADE,
-  FOREIGN KEY (order_state_type_id) REFERENCES "order_state_type"(order_state_type_id) ON DELETE CASCADE
+  FOREIGN KEY (order_state_type_id) REFERENCES "order_state_type"(order_state_type_id) ON DELETE CASCADE,
+  FOREIGN KEY (currency_id) REFERENCES "currency"(currency_id) ON DELETE CASCADE
 );
 CREATE TRIGGER update_order_updated_at BEFORE
 UPDATE
@@ -235,12 +237,13 @@ CREATE TABLE "payment_provider" (
   payment_method_type_id BIGINT NOT NULL,
   name TEXT NOT NULL,
   label TEXT NOT NULL,
-  enabled BOOLEAN DEFAULT FALSE,
+  spec JSONB NOT NULL,
+  enabled BOOLEAN NOT NULL,
   FOREIGN KEY (payment_method_type_id) REFERENCES "payment_method_type"(payment_method_type_id) ON DELETE CASCADE
 );
 INSERT INTO payment_provider
 VALUES
-  (1, 1, 'STRIPE CHECKOUT', 'Stripe Checkout', false);
+  (1, 1, 'STRIPE CHECKOUT', 'Stripe Checkout', '{"supportedCurrencies": ["USD", "EUR"]}', true);
 
 CREATE TABLE "payment_state_type" (
   payment_state_type_id BIGINT PRIMARY KEY NOT NULL,
@@ -269,7 +272,24 @@ CREATE TABLE "payment" (
 );
 CREATE TRIGGER update_payment_updated_at BEFORE
 UPDATE
-    ON "payment" FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  ON "payment" FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Store
+CREATE TABLE "store_configuration" (
+  store_id BIGINT PRIMARY KEY NOT NULL,
+  currency_id BIGINT NOT NULL,
+  notification_provider_id BIGINT NOT NULL,
+  name TEXT NOT NULL,
+  updated_at TIMESTAMP(3) WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  FOREIGN KEY (currency_id) REFERENCES "currency"(currency_id),
+  FOREIGN KEY (notification_provider_id) REFERENCES "notification_provider"(notification_provider_id)
+);
+CREATE TRIGGER update_store_configuration_updated_at BEFORE
+UPDATE
+  ON "store_configuration" FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+INSERT INTO store_configuration
+VALUES
+  (1, 1, 1, 'Shop');
 
 -- Shopping Cart
 CREATE TABLE "shopping_cart" (
